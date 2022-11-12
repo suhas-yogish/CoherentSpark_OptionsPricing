@@ -1,23 +1,13 @@
-# Third party imports
+import requests
 import numpy as np
 from scipy.stats import norm 
+import json
 
 # Local package imports
 from .base import OptionPricingModel
 
-
 class BlackScholesModel(OptionPricingModel):
-    """ 
-    Class implementing calculation for European option price using Black-Scholes Formula.
-
-    Call/Put option price is calculated with following assumptions:
-    - European option can be exercised only on maturity date.
-    - Underlying stock does not pay divident during option's lifetime.  
-    - The risk free rate and volatility are constant.
-    - Efficient Market Hypothesis - market movements cannot be predicted.
-    - Lognormal distribution of underlying returns.
-    """
-
+    
     def __init__(self, underlying_spot_price, strike_price, days_to_maturity, risk_free_rate, sigma):
         """
         Initializes variables used in Black-Scholes formula .
@@ -33,19 +23,46 @@ class BlackScholesModel(OptionPricingModel):
         self.T = days_to_maturity / 365
         self.r = risk_free_rate
         self.sigma = sigma
-
+        
+        
     def _calculate_call_option_price(self): 
         """
         Calculates price for call option according to the formula.        
         Formula: S*N(d1) - PresentValue(K)*N(d2)
         """
-        # cumulative function of standard normal distribution (risk-adjusted probability that the option will be exercised)     
-        d1 = (np.log(self.S / self.K) + (self.r + 0.5 * self.sigma ** 2) * self.T) / (self.sigma * np.sqrt(self.T))
+
+        url = "https://excel.staging.coherent.global/coherent/api/v3/folders/Microsoft Envision/services/BlackScholes/Execute"
+
+        payload = json.dumps({
+          "request_data": {
+            "inputs": {
+              "ExercisePrice": 900,
+              "RisklessRate": 0.5,
+              "StdDev": 0.9,
+              "StockPrice": 726,
+              "TimeToExpiry": 0.4
+            }
+          },
+          "request_meta": {
+            "version_id": "49294d02-b796-4966-8d2f-c76193ebad6b",
+            "call_purpose": "Spark - API Tester",
+            "source_system": "SPARK",
+            "correlation_id": "",
+            "requested_output": None,
+            "service_category": ""
+          }
+        })
+        headers = {
+          'Content-Type': 'application/json',
+          'x-tenant-name': 'coherent',
+          'x-synthetic-key': 'facaae76-30e7-4201-9cc7-683dd3a751c6'
+        }
+
+        response = requests.request("POST", url, headers=headers, data=payload)
         
-        # cumulative function of standard normal distribution (probability of receiving the stock at expiration of the option)
-        d2 = (np.log(self.S / self.K) + (self.r - 0.5 * self.sigma ** 2) * self.T) / (self.sigma * np.sqrt(self.T))
+        outputs = json.loads(response.text)['response_data']['outputs']
         
-        return (self.S * norm.cdf(d1, 0.0, 1.0) - self.K * np.exp(-self.r * self.T) * norm.cdf(d2, 0.0, 1.0))
+        return outputs
     
 
     def _calculate_put_option_price(self): 
@@ -53,10 +70,74 @@ class BlackScholesModel(OptionPricingModel):
         Calculates price for put option according to the formula.        
         Formula: PresentValue(K)*N(-d2) - S*N(-d1)
         """  
-        # cumulative function of standard normal distribution (risk-adjusted probability that the option will be exercised)    
-        d1 = (np.log(self.S / self.K) + (self.r + 0.5 * self.sigma ** 2) * self.T) / (self.sigma * np.sqrt(self.T))
+        url = "https://excel.staging.coherent.global/coherent/api/v3/folders/Microsoft Envision/services/BlackScholes/Execute"
 
-        # cumulative function of standard normal distribution (probability of receiving the stock at expiration of the option)
-        d2 = (np.log(self.S / self.K) + (self.r - 0.5 * self.sigma ** 2) * self.T) / (self.sigma * np.sqrt(self.T))
+        payload = json.dumps({
+          "request_data": {
+            "inputs": {
+              "ExercisePrice": strike_price,
+              "RisklessRate": risk_free_rate,
+              "StdDev": sigma,
+              "StockPrice": underlying_spot_price,
+              "TimeToExpiry": days_to_maturity
+            }
+          },
+          "request_meta": {
+            "version_id": "4ed3f377-ef3d-488a-b5bd-d2df160be49f",
+            "call_purpose": "Spark - API Tester",
+            "source_system": "SPARK",
+            "correlation_id": "",
+            "requested_output": None,
+            "service_category": ""
+          }
+        })
+        headers = {
+          'Content-Type': 'application/json',
+          'x-tenant-name': 'coherent',
+          'x-synthetic-key': 'facaae76-30e7-4201-9cc7-683dd3a751c6'
+        }
+
+        response = requests.request("POST", url, headers=headers, data=payload)
         
-        return (self.K * np.exp(-self.r * self.T) * norm.cdf(-d2, 0.0, 1.0) - self.S * norm.cdf(-d1, 0.0, 1.0))
+        outputs = json.loads(response.text)['response_data']['outputs']   
+        
+        return outputs['putprice']
+        
+
+    def _calculate_greeks(self): 
+        """
+        Calculates price for put option according to the formula.        
+        Formula: PresentValue(K)*N(-d2) - S*N(-d1)
+        """  
+        url = "https://excel.staging.coherent.global/coherent/api/v3/folders/Microsoft Envision/services/BlackScholes/Execute"
+
+        payload = json.dumps({
+          "request_data": {
+            "inputs": {
+              "ExercisePrice": strike_price,
+              "RisklessRate": risk_free_rate,
+              "StdDev": sigma,
+              "StockPrice": underlying_spot_price,
+              "TimeToExpiry": days_to_maturity
+            }
+          },
+          "request_meta": {
+            "version_id": "4ed3f377-ef3d-488a-b5bd-d2df160be49f",
+            "call_purpose": "Spark - API Tester",
+            "source_system": "SPARK",
+            "correlation_id": "",
+            "requested_output": None,
+            "service_category": ""
+          }
+        })
+        headers = {
+          'Content-Type': 'application/json',
+          'x-tenant-name': 'coherent',
+          'x-synthetic-key': 'facaae76-30e7-4201-9cc7-683dd3a751c6'
+        }
+
+        response = requests.request("POST", url, headers=headers, data=payload)
+        
+        outputs = json.loads(response.text)['response_data']['outputs']   
+        
+        return outputs

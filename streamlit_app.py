@@ -53,12 +53,24 @@ if pricing_method == OPTION_PRICING_MODEL.BLACK_SCHOLES.value:
 
         # Calculating option price
         BSM = BlackScholesModel(spot_price, strike_price, days_to_maturity, risk_free_rate, sigma)
-        call_option_price = BSM.calculate_option_price('Call Option')
-        put_option_price = BSM.calculate_option_price('Put Option')
+        options_output = BSM.calculate_option_price('Call Option')
 
+        call_option_price = options_output['callprice']
+        put_option_price = options_output['putprice']
+        Delta = options_output['Delta']
+        Gamma = options_output['Gamma']
+        Theta = options_output['Theta']
+        Vega = options_output['Vega']
+        Rho = options_output['Rho']
+        
         # Displaying call/put option price
         st.subheader(f'Call option price: {call_option_price}')
         st.subheader(f'Put option price: {put_option_price}')
+        st.subheader(f'Delta: {Delta}')
+        st.subheader(f'Gamma: {Gamma}')
+        st.subheader(f'Theta: {Theta}')
+        st.subheader(f'Vega: {Vega}')
+        st.subheader(f'Rho: {Rho}')
 
 elif pricing_method == OPTION_PRICING_MODEL.MONTE_CARLO.value:
     # Parameters for Monte Carlo simulation
