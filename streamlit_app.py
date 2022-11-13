@@ -1,6 +1,8 @@
 # Standart python imports
 from enum import Enum
 from datetime import datetime, timedelta
+import plotly.express as px
+import pandas as pd
 
 # Third party imports
 import streamlit as st
@@ -8,6 +10,7 @@ import streamlit as st
 # Local package imports
 from option_pricing import BlackScholesModel, MonteCarloPricing, BinomialTreeModel, Ticker
 
+history_df = pd.DataFrame()
 class OPTION_PRICING_MODEL(Enum):
     BLACK_SCHOLES = 'Black Scholes Model'
     MONTE_CARLO = 'Monte Carlo Simulation'
@@ -38,12 +41,17 @@ if pricing_method == OPTION_PRICING_MODEL.BLACK_SCHOLES.value:
     sigma = st.slider('Sigma (%)', 0, 100, 20)
     exercise_date = st.date_input('Exercise date', min_value=datetime.today() + timedelta(days=1), value=datetime.today() + timedelta(days=365))
     
+    inputs_dict = {'ticker':ticker, 'strike_price':strike_price, 'risk_free_rate':risk_free_rate, 'sigma':sigma, 'exercise_date':exercise_date}
+    inputs_df = pd.DataFrame(inputs_dict, index=[0,])
+    
     if st.button(f'Calculate option price for {ticker}'):
         # Getting data for selected ticker
         data = get_historical_data(ticker)
-        st.write(data.tail())
-        Ticker.plot_data(data, ticker, 'Adj Close')
-        st.pyplot()
+        st.write(data.tail(50))
+        fig = px.line(data, y='Adj Close', x=data.index)
+        st.plotly_chart(fig, use_container_width=True)
+        # fig = Ticker.plot_data(data, ticker, 'Adj Close')
+        
 
         # Formating selected model parameters
         spot_price = Ticker.get_last_price(data, 'Adj Close') 
@@ -63,14 +71,20 @@ if pricing_method == OPTION_PRICING_MODEL.BLACK_SCHOLES.value:
         Vega = options_output['Vega']
         Rho = options_output['Rho']
         
+        outputs_df = pd.DataFrame(options_output, index=[0,])
+        outputs_df = outputs_df[['callprice', 'putprice', 'Delta', 'Gamma', 'Theta', 'Vega','Rho']]
+        
+        concat_df = pd.concat([inputs_df, outputs_df], axis='columns')
+        
         # Displaying call/put option price
-        st.subheader(f'Call option price: {call_option_price}')
-        st.subheader(f'Put option price: {put_option_price}')
-        st.subheader(f'Delta: {Delta}')
-        st.subheader(f'Gamma: {Gamma}')
-        st.subheader(f'Theta: {Theta}')
-        st.subheader(f'Vega: {Vega}')
-        st.subheader(f'Rho: {Rho}')
+        st.dataframe(outputs_df)
+        history_df = history_df.append(concat_df)
+        
+        history_df
+        expander = st.expander("See history")
+        expander.write(history_df)
+        
+        
 
 elif pricing_method == OPTION_PRICING_MODEL.MONTE_CARLO.value:
     # Parameters for Monte Carlo simulation
