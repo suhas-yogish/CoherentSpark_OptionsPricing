@@ -79,8 +79,7 @@ if pricing_method == OPTION_PRICING_MODEL.BLACK_SCHOLES.value:
         # Displaying call/put option price
         st.dataframe(outputs_df)
         history_df = history_df.append(concat_df)
-        
-        history_df
+
         expander = st.expander("See history")
         expander.write(history_df)
         
