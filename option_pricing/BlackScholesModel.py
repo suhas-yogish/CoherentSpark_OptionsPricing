@@ -1,5 +1,6 @@
 import requests
 import numpy as np
+from scipy.stats import norm 
 import json
 
 # Local package imports
@@ -35,11 +36,11 @@ class BlackScholesModel(OptionPricingModel):
         payload = json.dumps({
           "request_data": {
             "inputs": {
-              "ExercisePrice": 900,
-              "RisklessRate": 0.5,
-              "StdDev": 0.9,
-              "StockPrice": 726,
-              "TimeToExpiry": 0.4
+              "ExercisePrice": self.K,
+              "RisklessRate": self.r,
+              "StdDev": self.sigma,
+              "StockPrice": self.S,
+              "TimeToExpiry": self.T
             }
           },
           "request_meta": {
@@ -74,11 +75,11 @@ class BlackScholesModel(OptionPricingModel):
         payload = json.dumps({
           "request_data": {
             "inputs": {
-              "ExercisePrice": strike_price,
-              "RisklessRate": risk_free_rate,
-              "StdDev": sigma,
-              "StockPrice": underlying_spot_price,
-              "TimeToExpiry": days_to_maturity
+              "ExercisePrice": self.K,
+              "RisklessRate": self.r,
+              "StdDev": self.sigma,
+              "StockPrice": self.S,
+              "TimeToExpiry": self.T
             }
           },
           "request_meta": {
@@ -113,11 +114,11 @@ class BlackScholesModel(OptionPricingModel):
         payload = json.dumps({
           "request_data": {
             "inputs": {
-              "ExercisePrice": strike_price,
-              "RisklessRate": risk_free_rate,
-              "StdDev": sigma,
-              "StockPrice": underlying_spot_price,
-              "TimeToExpiry": days_to_maturity
+              "ExercisePrice": self.K,
+              "RisklessRate": self.r,
+              "StdDev": self.sigma,
+              "StockPrice": self.S,
+              "TimeToExpiry": self.T
             }
           },
           "request_meta": {
