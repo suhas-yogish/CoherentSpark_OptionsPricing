@@ -34,6 +34,16 @@ markdown_about = """## Coherent Spark
 - Centralize, secure & audit business logic
 - Automate complex modeling, testing & business impact simulation """
 
+markdown_app = """# Options Pricing Models
+
+[![ygMrMX.md.png](https://iili.io/ygMrMX.md.png)](https://coherent.global/spark/)
+
+### Building business software is now as easy as creating an Excel worksheet.
+
+- Convert spreadsheets into ready-to-integrate APIs
+- Centralize, secure & audit business logic
+- Automate complex modeling, testing & business impact simulation"""
+
 st.set_page_config(
     page_title="Coherent Spark Options Pricing",
     page_icon=":rocket:",
@@ -46,39 +56,35 @@ st.set_page_config(
     }
 )
 
+st.markdown(markdown_app)
 
-markdown_intro = """# Options Pricing Models
+# User selected model from sidebar 
+pricing_method = st.sidebar.radio('Please select option pricing method', options=[model.value for model in OPTION_PRICING_MODEL])
 
-[![ygMrMX.md.png](https://iili.io/ygMrMX.md.png)](https://coherent.global/spark/)
-
-### Building business software is now as easy as creating an Excel worksheet.
-
-- Convert spreadsheets into ready-to-integrate APIs
-- Centralize, secure & audit business logic
-- Automate complex modeling, testing & business impact simulation
-
+markdown_BSM = """
 ### Black Scholes Model
 
 - This web app is integrated with Yahoo Finance API and can retrieve the spot price for any ticker.
 - Along with the retrieved spot price, the user inputs the remaining variables on the front-end.
 - An API call is made to the Coherent Spark service with the above inputs.
-- The model outputs including the Call Price, Put Price and the Greeks are displayed.
+- The model outputs including the Call Price, Put Price displayed.
 
 [![ygW9zN.md.png](https://iili.io/ygW9zN.md.png)](https://freeimage.host/i/ygW9zN) """
 
-st.markdown(markdown_intro)
+markdown_MCS = """
+### Monte Carlo Simulation Model
 
-
-# User selected model from sidebar 
-pricing_method = st.sidebar.radio('Please select option pricing method', options=[model.value for model in OPTION_PRICING_MODEL])
-
-# Displaying specified model
-st.subheader(f'Pricing method: {pricing_method}')
+- This web app is integrated with Yahoo Finance API and can retrieve the spot price for any ticker.
+- Along with the retrieved spot price, the user inputs the remaining variables on the front-end.
+- An API call is made to the Coherent Spark service with the above inputs.
+- The model outputs including the Call Price, Put Price & Simulation results displayed. """
 
 if pricing_method == OPTION_PRICING_MODEL.BLACK_SCHOLES.value:
+    
+    st.markdown(markdown_BSM)
     # Parameters for Black-Scholes model
     ticker = st.text_input('Ticker symbol', 'AAPL')
-    strike_price = st.number_input('Strike price', 300)
+    strike_price = st.number_input('Strike price', 0)
     risk_free_rate = st.slider('Risk-free rate (%)', 0, 100, 10)
     sigma = st.slider('Sigma (%)', 0, 100, 20)
     exercise_date = st.date_input('Exercise date', min_value=datetime.today() + timedelta(days=1), value=datetime.today() + timedelta(days=365))
@@ -92,7 +98,6 @@ if pricing_method == OPTION_PRICING_MODEL.BLACK_SCHOLES.value:
         st.write(data.tail(50))
         fig = px.line(data, y='Adj Close', x=data.index)
         st.plotly_chart(fig, use_container_width=True)
-        # fig = Ticker.plot_data(data, ticker, 'Adj Close')
         
 
         # Formating selected model parameters
@@ -122,28 +127,30 @@ if pricing_method == OPTION_PRICING_MODEL.BLACK_SCHOLES.value:
         st.dataframe(outputs_df)
         history_df = history_df.append(concat_df)
         
-        history_df
         expander = st.expander("See history")
         expander.write(history_df)
         
         
 
 elif pricing_method == OPTION_PRICING_MODEL.MONTE_CARLO.value:
+    
+    st.markdown(markdown_MCS)
+    
     # Parameters for Monte Carlo simulation
     ticker = st.text_input('Ticker symbol', 'AAPL')
-    strike_price = st.number_input('Strike price', 300)
+    strike_price = st.number_input('Strike price', 0)
     risk_free_rate = st.slider('Risk-free rate (%)', 0, 100, 10)
     sigma = st.slider('Sigma (%)', 0, 100, 20)
     exercise_date = st.date_input('Exercise date', min_value=datetime.today() + timedelta(days=1), value=datetime.today() + timedelta(days=365))
-    number_of_simulations = st.slider('Number of simulations', 100, 100000, 10000)
+    number_of_simulations = st.slider('Number of simulations', 100, 5000, 100)
     num_of_movements = st.slider('Number of price movement simulations to be visualized ', 0, int(number_of_simulations/10), 100)
 
     if st.button(f'Calculate option price for {ticker}'):
         # Getting data for selected ticker
         data = get_historical_data(ticker)
         st.write(data.tail())
-        Ticker.plot_data(data, ticker, 'Adj Close')
-        st.pyplot()
+        fig = px.line(data, y='Adj Close', x=data.index)
+        st.plotly_chart(fig, use_container_width=True)
 
         # Formating simulation parameters
         spot_price = Ticker.get_last_price(data, 'Adj Close') 
@@ -153,19 +160,22 @@ elif pricing_method == OPTION_PRICING_MODEL.MONTE_CARLO.value:
 
         # ESimulating stock movements
         MC = MonteCarloPricing(spot_price, strike_price, days_to_maturity, risk_free_rate, sigma, number_of_simulations)
-        MC.simulate_prices()
-
-        # Visualizing Monte Carlo Simulation
-        MC.plot_simulation_results(num_of_movements)
-        st.pyplot()
 
         # Calculating call/put option price
-        call_option_price = MC.calculate_option_price('Call Option')
-        put_option_price = MC.calculate_option_price('Put Option')
+        options_output = MC.calculate_option_price('Call Option')
+        
+        call_option_price = options_output['CallPrice']
+        put_option_price = options_output['PutPrice']
+        
+        st.subheader(f'Simulation Outputs:')
+        
+        simulation = pd.DataFrame(options_output['simulation'])
+        
+        st.dataframe(simulation.head(num_of_movements))
 
         # Displaying call/put option price
-        st.subheader(f'Call option price: {call_option_price}')
-        st.subheader(f'Put option price: {put_option_price}')
+        st.subheader(f'Call option price: ${call_option_price}')
+        st.subheader(f'Put option price: ${put_option_price}')
 
 elif pricing_method == OPTION_PRICING_MODEL.BINOMIAL.value:
     # Parameters for Binomial-Tree model
