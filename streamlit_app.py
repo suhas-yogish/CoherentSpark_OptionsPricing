@@ -24,8 +24,50 @@ def get_historical_data(ticker):
 # Ignore the Streamlit warning for using st.pyplot()
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
-# Main title
-st.title('Option pricing')
+markdown_about = """## Coherent Spark
+
+[![N|Solid](https://cdn-dobio.nitrocdn.com/kxxhJEeIPqWRFfdFTzrYPqOhMMlkFVKR/assets/static/optimized/rev-822d44c/app/uploads/2021/11/Logo-Coherent.gif)](https://coherent.global/spark/)
+
+### Building business software is now as easy as creating an Excel worksheet.
+
+- Convert spreadsheets into ready-to-integrate APIs
+- Centralize, secure & audit business logic
+- Automate complex modeling, testing & business impact simulation """
+
+st.set_page_config(
+    page_title="Coherent Spark Options Pricing",
+    page_icon=":rocket:",
+    layout="centered",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get help': 'https://coherent.global/contact/',
+        'Report a Bug': None,
+        'About': markdown_about
+    }
+)
+
+
+markdown_intro = """# Options Pricing Models
+
+[![ygMrMX.md.png](https://iili.io/ygMrMX.md.png)](https://coherent.global/spark/)
+
+### Building business software is now as easy as creating an Excel worksheet.
+
+- Convert spreadsheets into ready-to-integrate APIs
+- Centralize, secure & audit business logic
+- Automate complex modeling, testing & business impact simulation
+
+### Black Scholes Model
+
+- This web app is integrated with Yahoo Finance API and can retrieve the spot price for any ticker.
+- Along with the retrieved spot price, the user inputs the remaining variables on the front-end.
+- An API call is made to the Coherent Spark service with the above inputs.
+- The model outputs including the Call Price, Put Price and the Greeks are displayed.
+
+[![ygW9zN.md.png](https://iili.io/ygW9zN.md.png)](https://freeimage.host/i/ygW9zN) """
+
+st.markdown(markdown_intro)
+
 
 # User selected model from sidebar 
 pricing_method = st.sidebar.radio('Please select option pricing method', options=[model.value for model in OPTION_PRICING_MODEL])
@@ -79,7 +121,8 @@ if pricing_method == OPTION_PRICING_MODEL.BLACK_SCHOLES.value:
         # Displaying call/put option price
         st.dataframe(outputs_df)
         history_df = history_df.append(concat_df)
-
+        
+        history_df
         expander = st.expander("See history")
         expander.write(history_df)
         
