@@ -3,6 +3,8 @@ from enum import Enum
 from datetime import datetime, timedelta
 import plotly.express as px
 import pandas as pd
+import streamlit as st
+import streamlit.components.v1 as components
 
 # Third party imports
 import streamlit as st
@@ -57,6 +59,15 @@ st.set_page_config(
 )
 
 st.markdown(markdown_app)
+# st_player("https://vimeo.com/673532746?embedded=true&source=vimeo_logo&owner=136556090")
+
+# embed Coherent Spark video
+components.html(
+    """
+    <iframe src="https://player.vimeo.com/video/673532746?h=7ce2921baa" width="640" height="360" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen </iframe>
+    """,
+    height=360,
+)
 
 # User selected model from sidebar 
 pricing_method = st.sidebar.radio('Please select option pricing method', options=[model.value for model in OPTION_PRICING_MODEL])
